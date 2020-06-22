@@ -19,6 +19,9 @@ class MainWindow(Qt.QMainWindow):
         '''
         Qt.QMainWindow.__init__(self, parent)
 
+        self.pc_points = []
+        self.pc_colors = []
+
         # initial size
         self.setMinimumSize(winsize[0],winsize[1])
 
@@ -26,7 +29,6 @@ class MainWindow(Qt.QMainWindow):
         self.frame = Qt.QFrame()
         vlayout = Qt.QVBoxLayout()
         vlayout.setContentsMargins(0,0,0,0)
-
 
         # add a menu
         mainMenu = self.menuBar()
@@ -46,7 +48,9 @@ class MainWindow(Qt.QMainWindow):
         self.plotter.show_axes_all()
 
         # give depth perspective for the points
-        self.plotter.enable_eye_dome_lighting()
+        #self.plotter.disable_eye_dome_lighting()
+        self.plotter.enable_depth_peeling()
+        self.plotter.disable_parallel_projection()
 
         # set initial camera pozition
         self.cpos = np.array(campos)
@@ -60,7 +64,7 @@ class MainWindow(Qt.QMainWindow):
         # set up timer for cyclic update
         timer = QtCore.QTimer(self)
         timer.timeout.connect(self.PlotUpdate)
-        timer.start(1)
+        timer.start(80)
 
         if show:
             self.show()
@@ -71,22 +75,66 @@ class MainWindow(Qt.QMainWindow):
         :return:
         '''
 
-        # holds the data
-        global kpoints
+        self.pc_points, self.pc_colors = self.conv2dto3d()
 
         # clean the view
         self.plotter.clear()
-        point_cloud = pv.PolyData(kpoints)
+        point_cloud = pv.PolyData(self.pc_points)
+
+        if args.rgb == 'c':
+            point_cloud["colors"] = self.pc_colors
+        else:
+            dc = cv2.normalize(self.pc_points[:, -1], None, 0.0, 1.0, cv2.NORM_MINMAX)
+            point_cloud["colors"] = dc
 
         # add data to be visualized
-        self.plotter.add_mesh(point_cloud, point_size=1.0, lighting=True, render_points_as_spheres=True)
+        self.plotter.add_mesh(point_cloud, point_size=1.0, lighting=False, render_points_as_spheres=False, color=True, interpolate_before_map=False, show_scalar_bar=False)
+
+    def conv2dto3d(self):
+        '''
+        Convert depth to 3D point cloud
+        :return: points 3d point cloud, colors of the points
+        '''
+
+	# get depth array
+        try:
+            img = freenect.sync_get_video()[0]
+            disp = freenect.sync_get_depth()[0]
+
+        except:
+            disp = None
+
+	#convert it to point cloud
+        if disp is not None:
+            disp = np.array(disp, dtype=np.float32)
+
+            h, w = img.shape[:2]
+
+            # estimate focal length
+            f = 6.0 * w
+
+            # prepare reprojection in 3D
+            Q = np.float32([[1, 0, 0, -0.5*w],
+                            [0, -1, 0, 0.5*h],
+                            [0, 0, 0, f],
+                            [0, 0, 1, 0]])
+
+            points = cv2.reprojectImageTo3D(disp, Q)
+
+            # get only points of interest
+            mask = disp < disp.max()
+
+            points = points[mask]
+            colors = img[mask]
+
+            return points, colors
 
     def save_ply(self):
         '''
         Save curent layout to an out.ply file
         :return:
         '''
-        global kpoints
+
         ply_header = '''ply
         format ascii 1.0
         element vertex %(vert_num)d
@@ -99,48 +147,20 @@ class MainWindow(Qt.QMainWindow):
         end_header
         '''
 
-        verts = kpoints.reshape(-1, 3)
+        verts = self.pc_points.reshape(-1, 3)
         colors = np.ones(verts.shape)
-        verts = np.hstack([verts, colors])
+        verts = np.hstack([verts, self.pc_colors])
+        print (self.pc_points.shape,self.pc_colors.shape)
         with open('out.ply', 'wb') as f:
             f.write((ply_header % dict(vert_num=len(verts))).encode('utf-8'))
             np.savetxt(f, verts, fmt='%f %f %f %d %d %d ')
-
-def worker():
-    '''
-    Get the data from Kinect and prepare for plotting
-    :return:
-    '''
-    global kpoints, kcolors
-    while True:
-        # get data from kinect
-        disp = np.array(freenect.sync_get_depth()[0], dtype=np.float32)
-        data = freenect.sync_get_video()[0]
-
-        frame = data[:, :, ::-1]
-        h, w = frame.shape[:2]
-
-        # estimate focal length
-        f = 4.0 * w
-
-        # prepare reprojection in 3D
-        Q = np.float32([[1, 0, 0, -0.5 * w],
-                        [0, -1, 0, 0.5 * h],
-                        [0, 0, 0, f],
-                        [0, 0, 1, 0]])
-
-        points = cv2.reprojectImageTo3D(disp, Q)
-
-        # get only points of interest
-        mask = (disp > disp.min()) & (disp < disp.max())
-        kpoints = points[mask]
-
 
 if __name__ == '__main__':
 
     # process cmd line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('-camid', type=int, metavar='camera',required=True, default=None, choices=[None, 0, 1, 2, 3], help='usb port on which kinect is connected, camid=[None,0,1,2,3], default=None')
+    parser.add_argument('-rgb', type=str, metavar='rgb', required=False, default='c', choices=['c', 'd'], help=' [c,d] Use RGB colors from ply file or use depth info to colorize')
 
     args = parser.parse_args()
 
@@ -150,19 +170,10 @@ if __name__ == '__main__':
     else:
         KINECT_ID = args.camid
 
-    # globals
-    kpoints = np.empty((1, 3), np.float32)
-    disp = np.empty((1, 3), np.uint16)
-
     # kinect init
-    ctx = freenect.init()
-    mdev = freenect.open_device(freenect.init(), KINECT_ID)
-    freenect.set_depth_mode(mdev, freenect.RESOLUTION_MEDIUM, freenect.DEPTH_REGISTERED)
-
-
-    # start serving the kinect frames
-    th = threading.Thread(target=worker, daemon=True)
-    th.start()
+    context = freenect.init()
+    device = freenect.open_device(context, KINECT_ID)
+    freenect.set_depth_mode(device, freenect.RESOLUTION_MEDIUM, freenect.DEPTH_REGISTERED)
 
     # crate application window for plotting
     app = Qt.QApplication(sys.argv)
