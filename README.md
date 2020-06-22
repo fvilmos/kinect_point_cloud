@@ -14,7 +14,8 @@ Draws real time 3D point cloud with kinect. The point cloud can be exported as .
 
 The folowing libraries must be installed over pip to run this software (for python >= 3.5):
 - pip3 install opencv-python - used to do the depth information to 3D projection
-- pip3 install pyvista - 3D visualization library, usit to visualize the 3D data
+- pip3 install pyvista and pyvistaqt - 3D visualization library, used to visualize the 3D data
+- pip3 install PyQt5 - needed as frontend for pyvista
 - pip3 install freenect - library to access kinect RGB-D data
 
 ## Command line parameters
@@ -50,8 +51,8 @@ optional arguments:
 
 ## Resurces
 
-[pyvista docs](https://docs.pyvista.org/)
-[Technical information from kinect](http://wiki.ros.org/kinect_calibration/technical)
-[Polygon File Format .ply](https://en.wikipedia.org/wiki/PLY_(file_format)) and [here](http://paulbourke.net/dataformats/ply/)
+- [pyvista docs](https://docs.pyvista.org/)
+- [Technical information from kinect](http://wiki.ros.org/kinect_calibration/technical)
+- [Polygon File Format .ply](https://en.wikipedia.org/wiki/PLY_(file_format)) and [here](http://paulbourke.net/dataformats/ply/)
 
 /Enjoy.
