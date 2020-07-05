@@ -54,5 +54,6 @@ optional arguments:
 - [pyvista docs](https://docs.pyvista.org/)
 - [Technical information from kinect](http://wiki.ros.org/kinect_calibration/technical)
 - [Polygon File Format .ply](https://en.wikipedia.org/wiki/PLY_(file_format)) and [here](http://paulbourke.net/dataformats/ply/)
+- [Kinect Calibration info](http://burrus.name/index.php/Research/KinectCalibration)
 
 /Enjoy.
