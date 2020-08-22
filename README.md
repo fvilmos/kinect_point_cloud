@@ -2,7 +2,7 @@
 
 ## About
 
-Draws real time 3D point cloud with kinect. The point cloud can be exported as .ply file, processed later with a viewer (included too).
+Draws real-time 3D point cloud with Kinect. The point cloud can be exported as .ply file, processed later with a viewer (included too).
 
 <p align="center"> 
 <img src="./data/gui.png" alt="400" width="400"></a>
@@ -12,15 +12,15 @@ Draws real time 3D point cloud with kinect. The point cloud can be exported as .
 
 ## Pre-reuisites
 
-The folowing libraries must be installed over pip to run this software (for python >= 3.5):
+The following libraries must be installed over pip to run this software (for python >= 3.5):
 - pip3 install opencv-python - used to do the depth information to 3D projection
 - pip3 install pyvista and pyvistaqt - 3D visualization library, used to visualize the 3D data
-- pip3 install PyQt5 - needed as frontend for pyvista
+- pip3 install PyQt5 - needed as the frontend for pyvista
 - pip3 install freenect - library to access kinect RGB-D data
 
 ## Command line parameters
 
-The first ```kinect_3d_view.py``` file is the real time kinect data viewer. Uses freenect library to receive the frames from the RGB-D kinect camera and uses [pyvista](https://www.pyvista.org/) + [PyQt5](https://www.riverbankcomputing.com/software/pyqt/) as GUI to visualize it. Interaction is over the mouse. Command line options:
+The first ```kinect_3d_view.py``` file is the real-time Kinect data viewer. Uses freenect library to receive the frames from the RGB-D Kinect camera and uses [pyvista](https://www.pyvista.org/) + [PyQt5](https://www.riverbankcomputing.com/software/pyqt/) as GUI to visualize it. Interaction is over the mouse. Command-line options:
 
 ```
 python3 kinect_3d_view.py --help
@@ -34,7 +34,7 @@ optional arguments:
 When the GUI is running, there is a save command available in the menu, to save the current view as .ply output.
 
 
-The ```ply_view.py``` file is a very simple ply viewer program, using the pyvista built in functions. The program provide also an animated gif generation, see command line options.
+The ```ply_view.py``` file is a very simple ply viewer program, using the pyvista built-in functions. The program provide also an animated gif generation, see command-line options.
 ```
 python3 ply_view.py --help
 usage: ply_view.py [-h] -f file [-o orbit] [-cp camposition]
@@ -49,7 +49,7 @@ optional arguments:
 ```
 
 
-## Resurces
+## Resources
 
 - [pyvista docs](https://docs.pyvista.org/)
 - [Technical information from kinect](http://wiki.ros.org/kinect_calibration/technical)
