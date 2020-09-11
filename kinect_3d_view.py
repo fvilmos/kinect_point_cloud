@@ -65,10 +65,12 @@ class KinectHandler():
         Get synchronously depth and RGB frames
         :return:
         '''
-        depth = freenect.sync_get_depth()[0]
-        rgb = freenect.sync_get_video()[0]
+        self.depth = freenect.sync_get_depth()[0]
+        self.rgb = freenect.sync_get_video()[0]
 
-        return depth, rgb
+
+
+        return self.depth, self.rgb
 
     def depth_cam_mat(self):
         '''
@@ -136,6 +138,9 @@ class MainWindow(Qt.QMainWindow):
         vlayout = Qt.QVBoxLayout()
         vlayout.setContentsMargins(0,0,0,0)
 
+        #update rate
+        self.UPDATE_RATE = 80
+
         # add a menu
         mainMenu = self.menuBar()
         fileMenu = mainMenu.addMenu('File')
@@ -144,7 +149,7 @@ class MainWindow(Qt.QMainWindow):
         exitButton.triggered.connect(self.close)
         fileMenu.addAction(exitButton)
 
-        self.add_save_action = Qt.QAction('Save out.ply', self)
+        self.add_save_action = Qt.QAction('Save out.ply & out.jpg', self)
         self.add_save_action.triggered.connect(self.save_ply)
         fileMenu.addAction(self.add_save_action)
 
@@ -173,7 +178,7 @@ class MainWindow(Qt.QMainWindow):
         # set up timer for cyclic update
         timer = QtCore.QTimer(self)
         timer.timeout.connect(self.PlotUpdate)
-        timer.start(80)
+        timer.start(self.UPDATE_RATE)
 
         if show:
             self.show()
@@ -225,6 +230,10 @@ class MainWindow(Qt.QMainWindow):
         with open('out.ply', 'wb') as f:
             f.write((ply_header % dict(vert_num=len(verts))).encode('utf-8'))
             np.savetxt(f, verts, fmt='%f %f %f %d %d %d ')
+        
+        #save image
+        img = cv2.cvtColor(self.kin.rgb,cv2.COLOR_BGR2RGB)
+        cv2.imwrite('out.jpg',img)
 
 if __name__ == '__main__':
 
